@@ -8,7 +8,7 @@ router.get('/usuarios/:id', obtenerUnUsuario)
 
 router.post('/usuarios', crearUsuario)
 
-router.put('/usuarios/:id', editarUsuario)
+router.patch('/usuarios/:id', editarUsuario)
 
 router.delete('/usuarios/:id', eliminarUsuario)
 
