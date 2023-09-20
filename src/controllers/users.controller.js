@@ -1,6 +1,8 @@
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
 
+
+
 export const obtenerUsuarios = async (req, res) => {
     try {
         const [rows] = await pool.query("SELECT * FROM usuarios");
@@ -32,48 +34,45 @@ export const obtenerUnUsuario = async (req, res) => {
 };
 
 export const crearUsuario = async (req, res) => {
-    const {
-        nombre,
-        apellidos,
-        email,
-        passwd,
-        rol,
-        fecha_nacimiento,
-        foto_usuario,
-    } = req.body;
+    const { body, file } = req;
     try {
         // Verificar si el usuario ya existe
         const [existingUserRows] = await pool.query(
             "SELECT email from usuarios WHERE email = ?",
-            [email]
+            [body.email]
         );
 
         if (existingUserRows.length > 0)
             return res.status(400).json({
-                message: `Ya existe un usuario con ${email}.`,
+                message: `Ya existe un usuario con el email: ${body.email}.`,
             });
 
         // Hashear passwd
-        const hashedPasswd = await bcrypt.hash(passwd, 10);
-        const [rows] = await pool.query(
-            "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario) VALUES (?,?,?,?,?,?,?)",
-            [
-                nombre,
-                apellidos,
-                email,
-                hashedPasswd,
-                rol,
-                fecha_nacimiento,
-                foto_usuario,
-            ]
-        );
-        res.send({
-            id: rows.insertId,
-            nombre,
-            apellidos,
-            email,
-        });
+        const hashedPasswd = await bcrypt.hash(body.passwd, 10);
+        if (file) {
+            let url = `http://localhost:3000/images/${file.filename}`;
+            const [rows] = await pool.query(
+                "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario) VALUES (?,?,?,?,?,?,?)",
+                [
+                    body.nombre,
+                    body.apellidos,
+                    body.email,
+                    hashedPasswd,
+                    body.rol,
+                    body.fecha_nacimiento,
+                    url,
+                ]
+            );
+            res.send({
+                id: rows.insertId,
+                nombre: body.nombre,
+                apellidos: body.apellidos,
+                email: body.email,
+                foto_usuario: url,
+            });
+        }
     } catch (error) {
+        console.log(error);
         return res.status(500).json({
             message: "Algo fue mal :(",
         });
