@@ -30,6 +30,22 @@ export const crearLicencia = async (req, res) => {
                 fecha_renovacion,
             ]
         );
+        res.json(rows);
+    } catch (error) {
+        return res.status(500).json({
+            error,
+        });
+    }
+};
+
+export const asignarLicencia = async (req, res) => {
+    const { id_usuario, id_licencia } = req.body;
+    try {
+        // TODO: Comprobar que la licencia que se esta asignando no haya sido ya asignada 
+        const [rows] = await pool.query(
+            "INSERT INTO usuarios_licencias (id_usuario, id_licencia) VALUES (?,?)",
+            [id_usuario, id_licencia]
+        );
         res.json(rows)
     } catch (error) {
         return res.status(500).json({
