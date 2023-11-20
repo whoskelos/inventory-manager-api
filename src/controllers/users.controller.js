@@ -34,6 +34,7 @@ export const obtenerUnUsuario = async (req, res) => {
 export const crearUsuario = async (req, res) => {
     const { body, file } = req;
     try {
+        console.log(body);
         // Verificar si el usuario ya existe
         const [existingUserRows] = await pool.query(
             "SELECT email from usuarios WHERE email = ?",
@@ -61,7 +62,28 @@ export const crearUsuario = async (req, res) => {
                         url,
                     ]
                 );
-                res.send({
+                res.status(200).send({
+                    id: rows.insertId,
+                    nombre: body.nombre,
+                    apellidos: body.apellidos,
+                    email: body.email,
+                    foto_usuario: url,
+                });
+            } else {
+                let url = `http://localhost:3000/images/default.png`;
+                const [rows] = await pool.query(
+                    "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario) VALUES (?,?,?,?,?,?,?)",
+                    [
+                        body.nombre,
+                        body.apellidos,
+                        body.email,
+                        hashedPasswd,
+                        body.rol,
+                        body.fecha_nacimiento,
+                        url,
+                    ]
+                );
+                res.status(200).send({
                     id: rows.insertId,
                     nombre: body.nombre,
                     apellidos: body.apellidos,
@@ -71,7 +93,7 @@ export const crearUsuario = async (req, res) => {
             }
         }
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
         return res.status(500).json({
             message: "Algo fue mal :(",
         });
