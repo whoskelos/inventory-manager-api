@@ -6,21 +6,24 @@ config();
 
 export const iniciarSesion = async (req, res) => {
     const { email, passwd } = req.body;
+    const messages = [];
     const [userFound] = await pool.query(
-        "SELECT email, passwd FROM usuarios WHERE email = ?",
+        "SELECT * FROM usuarios WHERE email = ?",
         [email]
     );
-    if (userFound.length <= 0)
+    if (userFound.length <= 0) {
+        messages.push(`El usuario ${email} no existe`);
         return res.status(400).json({
-            message: `El usuario ${email} no existe`,
+            message: messages,
         });
-
+    }
     const match = await bcrypt.compare(passwd, userFound[0].passwd);
-    if (!match)
+    if (!match) {
+        messages.push("Password incorrecta");
         return res.status(400).json({
-            token: null,
-            message: "Password incorrecta",
+            message: messages,
         });
+    }
 
     const token = jwt.sign(
         {
@@ -31,8 +34,8 @@ export const iniciarSesion = async (req, res) => {
     );
 
     res.json({
+        user: userFound[0].nombre,
+        rol: userFound[0].rol,
         token,
     });
 };
-
-

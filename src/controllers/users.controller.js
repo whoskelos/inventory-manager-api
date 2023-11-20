@@ -1,8 +1,6 @@
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
 
-
-
 export const obtenerUsuarios = async (req, res) => {
     try {
         const [rows] = await pool.query("SELECT * FROM usuarios");
@@ -42,34 +40,35 @@ export const crearUsuario = async (req, res) => {
             [body.email]
         );
 
-        if (existingUserRows.length > 0)
+        if (existingUserRows.length > 0) {
             return res.status(400).json({
                 message: `Ya existe un usuario con el email: ${body.email}.`,
             });
-
-        // Hashear passwd
-        const hashedPasswd = await bcrypt.hash(body.passwd, 10);
-        if (file) {
-            let url = `http://localhost:3000/images/${file.filename}`;
-            const [rows] = await pool.query(
-                "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario) VALUES (?,?,?,?,?,?,?)",
-                [
-                    body.nombre,
-                    body.apellidos,
-                    body.email,
-                    hashedPasswd,
-                    body.rol,
-                    body.fecha_nacimiento,
-                    url,
-                ]
-            );
-            res.send({
-                id: rows.insertId,
-                nombre: body.nombre,
-                apellidos: body.apellidos,
-                email: body.email,
-                foto_usuario: url,
-            });
+        } else {
+            // Hashear passwd
+            const hashedPasswd = await bcrypt.hash(body.passwd, 10);
+            if (file) {
+                let url = `http://localhost:3000/images/${file.filename}`;
+                const [rows] = await pool.query(
+                    "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario) VALUES (?,?,?,?,?,?,?)",
+                    [
+                        body.nombre,
+                        body.apellidos,
+                        body.email,
+                        hashedPasswd,
+                        body.rol,
+                        body.fecha_nacimiento,
+                        url,
+                    ]
+                );
+                res.send({
+                    id: rows.insertId,
+                    nombre: body.nombre,
+                    apellidos: body.apellidos,
+                    email: body.email,
+                    foto_usuario: url,
+                });
+            }
         }
     } catch (error) {
         console.log(error);
