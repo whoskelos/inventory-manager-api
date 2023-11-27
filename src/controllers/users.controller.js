@@ -1,5 +1,10 @@
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+import fs from "fs";
 
 export const obtenerUsuarios = async (req, res) => {
     try {
@@ -32,63 +37,84 @@ export const obtenerUnUsuario = async (req, res) => {
 };
 
 export const crearUsuario = async (req, res) => {
-    const { body, file } = req;
+    const { nombre, apellidos, email, passwd, rol, fecha_nacimiento, puesto } =
+        req.body;
+    const { file } = req;
+    console.log(file);
+
     try {
-        console.log(body);
-        // Verificar si el usuario ya existe
+        // Verificamos si el usuario ya existe
         const [existingUserRows] = await pool.query(
             "SELECT email from usuarios WHERE email = ?",
-            [body.email]
+            [email]
         );
 
         if (existingUserRows.length > 0) {
             return res.status(400).json({
-                message: `Ya existe un usuario con el email: ${body.email}.`,
+                message: `Ya existe un usuario con el email: ${email}.`,
             });
         } else {
-            // Hashear passwd
-            const hashedPasswd = await bcrypt.hash(body.passwd, 10);
+            // Hasheamos password
+            const hashedPasswd = await bcrypt.hash(passwd, 10);
             if (file) {
-                let url = `http://localhost:3000/images/${file.filename}`;
+                if (file.size > 1572864) {
+                    return res.status(400).json({
+                        message: "La imagen debe ser inferior a 1.5MB",
+                    });
+                }
+                if (
+                    file.mimetype !== "image/png" ||
+                    file.mimetype !== "image/jpeg"
+                ) {
+                    return res.status(400).json({
+                        message: "La imagen debe tener formato PNG o JPG",
+                    });
+                }
+                //const nombreFoto = file.originalname;
+                const foto = fs.readFileSync(
+                    join(__dirname, `../static/images/${file.filename}`)
+                );
                 const [rows] = await pool.query(
-                    "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario) VALUES (?,?,?,?,?,?,?)",
+                    "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario, puesto) VALUES (?,?,?,?,?,?,?,?)",
                     [
-                        body.nombre,
-                        body.apellidos,
-                        body.email,
+                        nombre,
+                        apellidos,
+                        email,
                         hashedPasswd,
-                        body.rol,
-                        body.fecha_nacimiento,
-                        url,
+                        rol,
+                        fecha_nacimiento,
+                        foto,
+                        puesto,
                     ]
                 );
-                res.status(200).send({
+                res.status(201).send({
                     id: rows.insertId,
-                    nombre: body.nombre,
-                    apellidos: body.apellidos,
-                    email: body.email,
-                    foto_usuario: url,
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    email: email,
                 });
             } else {
-                let url = `http://localhost:3000/images/default.png`;
+                let defaultFoto = fs.readFileSync(
+                    join(__dirname, `../static/images/default.png`)
+                );
                 const [rows] = await pool.query(
-                    "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario) VALUES (?,?,?,?,?,?,?)",
+                    "INSERT INTO usuarios (nombre, apellidos, email, passwd, rol, fecha_nacimiento, foto_usuario, puesto) VALUES (?,?,?,?,?,?,?,?)",
                     [
-                        body.nombre,
-                        body.apellidos,
-                        body.email,
+                        nombre,
+                        apellidos,
+                        email,
                         hashedPasswd,
-                        body.rol,
-                        body.fecha_nacimiento,
-                        url,
+                        rol,
+                        fecha_nacimiento,
+                        defaultFoto,
+                        puesto,
                     ]
                 );
-                res.status(200).send({
+                res.status(201).send({
                     id: rows.insertId,
-                    nombre: body.nombre,
-                    apellidos: body.apellidos,
-                    email: body.email,
-                    foto_usuario: url,
+                    nombre: nombre,
+                    apellidos: apellidos,
+                    email: email,
                 });
             }
         }

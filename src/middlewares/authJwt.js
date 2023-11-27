@@ -3,6 +3,13 @@ import { config } from "dotenv";
 import { pool } from "../db.js";
 config();
 
+/**
+ * 
+ * @param {*} req "x-access-token" lleva el token que permitira realizar la peticion
+ * @param {status} res devuelve code 400 o 500 dependiendo del resultado de la peticion
+ * @param {*} next Continua a la siguiente funcion 
+ * @returns http status 
+ */
 export const verifyToken = async (req, res, next) => {
     const token = req.headers["x-access-token"];
 
